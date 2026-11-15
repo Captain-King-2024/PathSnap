@@ -29,6 +29,16 @@ class CandidateTests(unittest.TestCase):
         self.assertEqual(float(d[0]), 1.)
         self.assertEqual(float(fraction[0]), 1.)
 
+    def test_zero_length_arc_has_no_heading(self):
+        inputs = dict(nodes_xy=np.array([[0., 0.], [10., 0.]]),
+                      arcs=np.array([[0, 0], [0, 1]]), arc_ids=np.array([0, 1]),
+                      gps_xy=np.array([[0., 0.], [3., 0.]]),
+                      timestamps=np.array([0., 1.]), observation_ids=np.array([0, 1]))
+        result = m.generate(inputs, radius=10, k=2)
+        start = result['offsets'][1]
+        ids = result['candidate_arc_ids'][start:]
+        np.testing.assert_array_equal(result['features'][start:, 5], ids == 1)
+
 
 if __name__ == '__main__':
     unittest.main()

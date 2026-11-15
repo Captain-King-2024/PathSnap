@@ -66,12 +66,13 @@ def generate(inputs, radius=100.0, k=8):
         movement = point - points[i - 1] if i else np.zeros(2)
         step = float(np.linalg.norm(movement))
         heading_ok = i > 0 and 0 < dt <= 5 and step >= 2
+        heading_available = heading_ok & (lengths[ids] > 0)
         cosine = np.zeros(len(ids))
         if heading_ok:
             cosine = np.divide(vectors[ids] @ movement, lengths[ids] * step,
-                               out=np.zeros(len(ids)), where=lengths[ids] > 0)
+                               out=cosine, where=heading_available)
         matrix = np.column_stack([ds, np.arange(len(ids)), fs, lengths[ids], cosine,
-                                  np.full(len(ids), heading_ok), np.full(len(ids), step),
+                                  heading_available, np.full(len(ids), step),
                                   np.full(len(ids), dt), np.full(len(ids), step / dt if dt > 0 else 0),
                                   np.full(len(ids), dt > 5), outgoing[arcs[ids, 0]], incoming[arcs[ids, 1]]])
         features.append(matrix)
