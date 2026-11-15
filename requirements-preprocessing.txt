@@ -1,0 +1,2 @@
+# Version used for the validated preprocessing run.
+numpy==2.5.4

@@ -1,0 +1,8 @@
+{
+  "successful_trips": 90,
+  "failed_trips": [],
+  "observations": 227577,
+  "removed_observations": 0,
+  "duplicate_timestamps": 0,
+  "gaps_over_1s": 7548
+}
