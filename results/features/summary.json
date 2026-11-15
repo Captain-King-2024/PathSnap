@@ -1,0 +1,22 @@
+{
+  "trips": 90,
+  "observations": 227577,
+  "candidates": 1500896,
+  "fallback_observations": 1346,
+  "radius_m": 100,
+  "max_candidates": 8,
+  "feature_names": [
+    "distance_m",
+    "distance_rank",
+    "projection_fraction",
+    "arc_length_m",
+    "heading_cosine",
+    "heading_available",
+    "previous_step_m",
+    "previous_dt_s",
+    "previous_speed_mps",
+    "gap_over_5s",
+    "start_out_degree",
+    "end_in_degree"
+  ]
+}
