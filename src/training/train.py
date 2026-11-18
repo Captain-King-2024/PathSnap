@@ -161,6 +161,15 @@ def main():
     parser.add_argument('--folds', type=int, default=3, choices=range(2, 6))
     parser.add_argument('--jobs', type=int, default=2)
     args = parser.parse_args()
+
+    # Allow running the script from a repository subdirectory.
+    if not (args.features / 'train').is_dir():
+        repo_root = Path(__file__).resolve().parents[2]
+        if (repo_root / args.features / 'train').is_dir():
+            args.features = repo_root / args.features
+            args.labels = repo_root / args.labels
+            args.output = repo_root / args.output
+            args.model_dir = repo_root / args.model_dir
     if set(args.models) - {'logistic'}:
         try:
             import sklearn
