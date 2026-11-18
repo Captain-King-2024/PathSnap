@@ -4,9 +4,9 @@ Install the requirements and run from the repository root after generating candi
 
 ```powershell
 python -m pip install -r requirements-optimization.txt
-python -m src.optimization.tune --model boosting --trials 30
+python -m src.optimization.tune --trials 30
 ```
 
-Use `--model tree` to tune the standalone Decision Tree instead, or `--objective top1_accuracy` to select by observation-level top-1 rather than macro F1. Choose the model and objective before looking at the student-test results.
+The script tunes Random Forest only. Use `--objective top1_accuracy` to select by observation-level top-1. The default objective is macro F1. Choose the objective before looking at the student-test results.
 
-Optuna's TPE sampler starts with the runner's baseline settings and uses three trip-grouped folds from the 80 training trips. The runner refits the selected settings on all 80 trips and compares both settings on the 10 student-test trips. It writes the trial history and metrics to `results/optimization/<model>_bayesian.json` and the tuned model to `models/<model>_bayesian.pkl`. Existing baseline artifacts use separate filenames.
+Optuna's TPE sampler starts with the runner's Random Forest baseline and varies tree count, maximum depth, minimum samples per leaf, bootstrap sample fraction, and feature sampling. It uses three trip-grouped folds from the 80 training trips, then refits the baseline and winning settings on all 80 trips and compares them on the 10 student-test trips. The report goes to `results/optimization/forest_bayesian.json` and the tuned model goes to `models/forest_bayesian.pkl`.
