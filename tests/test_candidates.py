@@ -9,6 +9,11 @@ spec.loader.exec_module(m)
 
 
 class CandidateTests(unittest.TestCase):
+    def test_nearest_order_breaks_ties_at_cutoff_by_arc_id(self):
+        distances = np.array([2., 1., 2., 2., 4.])
+        arc_ids = np.array([99, 18, 7, 12, 0])
+        np.testing.assert_array_equal(m.nearest_order(distances, arc_ids, 3), [1, 2, 3])
+
     def test_long_segment_reverse_direction_and_fallback(self):
         a = dict(nodes_xy=np.array([[0., 0.], [1000., 0.], [500., 100.]]),
                  arcs=np.array([[0, 1], [1, 0], [2, 2]]), arc_ids=np.array([42, 43, 44]),
