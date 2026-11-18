@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 
-MODELS = ['logistic', 'tree', 'forest', 'boosting', 'mlp']
+MODELS = ['logistic', 'knn', 'forest', 'boosting', 'mlp']
 SEED = 557
 
 
@@ -81,11 +81,17 @@ def fit(name, x, y, jobs):
     if name == 'logistic':
         return fit_logistic(x, y), dict(l2=0.001, max_iter=20, standardized_clip=20)
     from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
+    from sklearn.neighbors import KNeighborsClassifier
     from sklearn.neural_network import MLPClassifier
     from sklearn.pipeline import make_pipeline
     from sklearn.preprocessing import StandardScaler
     from sklearn.tree import DecisionTreeClassifier
 
+    if name == 'knn':
+        classifier = KNeighborsClassifier(n_neighbors=15, weights='distance',
+                                           algorithm='kd_tree', n_jobs=jobs)
+        model = make_pipeline(StandardScaler(), classifier)
+        return model.fit(x, y), dict(scaling='StandardScaler', **classifier.get_params())
     if name == 'tree':
         model = DecisionTreeClassifier(max_depth=8, min_samples_leaf=40, random_state=SEED)
     elif name == 'forest':
@@ -151,7 +157,7 @@ def main():
                         help='Directory for evaluation reports')
     parser.add_argument('--model-dir', type=Path, default=Path('models'),
                         help='Directory for trained model artifacts')
-    parser.add_argument('--models', nargs='+', choices=MODELS, default=MODELS)
+    parser.add_argument('--models', nargs='+', choices=[*MODELS, 'tree'], default=MODELS)
     parser.add_argument('--folds', type=int, default=3, choices=range(2, 6))
     parser.add_argument('--jobs', type=int, default=2)
     args = parser.parse_args()
