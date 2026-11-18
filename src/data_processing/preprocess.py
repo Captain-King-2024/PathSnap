@@ -37,13 +37,12 @@ def components(n, arcs):
     return len({root(i) for i in range(n)})
 
 
-def process_trip(trip, destination):
+def read_trip_inputs(trip):
     ident = trip.name
-    paths = {ext: trip / f'{ident}.{ext}' for ext in ('track', 'nodes', 'arcs', 'route')}
+    paths = {ext: trip / f'{ident}.{ext}' for ext in ('track', 'nodes', 'arcs')}
     track = read_table(paths['track'], 3)
     nodes = read_table(paths['nodes'], 2)
     raw_arcs = read_table(paths['arcs'], 2)
-    raw_route = read_table(paths['route'], 1).ravel()
     if not valid_coordinates(nodes).all():
         raise ValueError('Invalid network coordinates; refusing to renumber nodes')
     if not np.isfinite(raw_arcs).all() or not np.equal(raw_arcs, np.floor(raw_arcs)).all():
@@ -51,11 +50,6 @@ def process_trip(trip, destination):
     if (raw_arcs < 0).any() or (raw_arcs >= len(nodes)).any():
         raise ValueError('Arc endpoint outside node range')
     arcs = raw_arcs.astype(np.int64)
-    if not np.isfinite(raw_route).all() or not np.equal(raw_route, np.floor(raw_route)).all():
-        raise ValueError('Route arc IDs must be finite integers')
-    if (raw_route < 0).any() or (raw_route >= len(arcs)).any():
-        raise ValueError('Reference arc ID outside arc range')
-    route = raw_route.astype(np.int64)
     mask = valid_coordinates(track[:, :2]) & np.isfinite(track[:, 2])
     clean = track[mask]
     if not len(clean):
@@ -64,12 +58,30 @@ def process_trip(trip, destination):
         raise ValueError('Timestamps decrease; refusing to reorder the trajectory silently')
     origin = np.median(nodes, axis=0)
     gps_xy, nodes_xy = project(clean[:, :2], origin), project(nodes, origin)
-    dt = np.diff(clean[:, 2])
-    distance = np.linalg.norm(np.diff(gps_xy, axis=0), axis=1)
-    speed = np.divide(distance, dt, out=np.full(len(dt), np.nan), where=dt > 0)
     lengths = np.linalg.norm(nodes_xy[arcs[:, 1]] - nodes_xy[arcs[:, 0]], axis=1)
-    row = dict(trip_id=ident, raw_observations=len(track), observations=len(clean),
-               removed_observations=int((~mask).sum()), nodes=len(nodes), arcs=len(arcs),
+    return dict(gps_lonlat=clean[:, :2], timestamps=clean[:, 2],
+                observation_ids=np.flatnonzero(mask), gps_xy=gps_xy, nodes_lonlat=nodes,
+                nodes_xy=nodes_xy, arcs=arcs, arc_ids=np.arange(len(arcs)),
+                arc_length_m=lengths, projection_origin_lonlat=origin), len(track)
+
+
+def process_trip(trip, destination):
+    ident = trip.name
+    paths = {ext: trip / f'{ident}.{ext}' for ext in ('track', 'nodes', 'arcs', 'route')}
+    inputs, raw_count = read_trip_inputs(trip)
+    nodes, arcs, nodes_xy, lengths = (inputs[key] for key in
+                                     ('nodes_lonlat', 'arcs', 'nodes_xy', 'arc_length_m'))
+    dt = np.diff(inputs['timestamps'])
+    distance = np.linalg.norm(np.diff(inputs['gps_xy'], axis=0), axis=1)
+    speed = np.divide(distance, dt, out=np.full(len(dt), np.nan), where=dt > 0)
+    raw_route = read_table(paths['route'], 1).ravel()
+    if not np.isfinite(raw_route).all() or not np.equal(raw_route, np.floor(raw_route)).all():
+        raise ValueError('Route arc IDs must be finite integers')
+    if (raw_route < 0).any() or (raw_route >= len(arcs)).any():
+        raise ValueError('Reference arc ID outside arc range')
+    route = raw_route.astype(np.int64)
+    row = dict(trip_id=ident, raw_observations=raw_count, observations=len(inputs['timestamps']),
+               removed_observations=raw_count - len(inputs['timestamps']), nodes=len(nodes), arcs=len(arcs),
                route_arcs=len(route), duplicate_timestamps=int((dt == 0).sum()),
                gaps_over_1s=int((dt > 1.000001).sum()), max_gap_s=float(dt.max()) if len(dt) else 0,
                zero_length_arcs=int((lengths == 0).sum()), weak_components=components(len(nodes), arcs),
@@ -79,10 +91,7 @@ def process_trip(trip, destination):
                extent_m=float(np.linalg.norm(np.ptp(nodes_xy, axis=0))))
     destination.mkdir(parents=True, exist_ok=True)
     # Inference assets deliberately contain no route/reference values.
-    np.savez_compressed(destination / 'inputs.npz', gps_lonlat=clean[:, :2], timestamps=clean[:, 2],
-                        observation_ids=np.flatnonzero(mask), gps_xy=gps_xy, nodes_lonlat=nodes,
-                        nodes_xy=nodes_xy, arcs=arcs, arc_ids=np.arange(len(arcs)),
-                        arc_length_m=lengths, projection_origin_lonlat=origin)
+    np.savez_compressed(destination / 'inputs.npz', **inputs)
     labels = destination.parent / '_references'
     labels.mkdir(exist_ok=True)
     np.savez_compressed(labels / f'{ident}.npz', route_arc_ids=route)

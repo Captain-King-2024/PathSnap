@@ -1,0 +1,21 @@
+{
+  "model_file": "boosting_bayesian_20.pkl",
+  "sha256": "fe6a33df2fe86b6534e3d1d698e4173796eb7f5bc25d91ccf5215735e447da13",
+  "sklearn_version": "1.9.1",
+  "feature_names": [
+    "distance_m",
+    "distance_rank",
+    "projection_fraction",
+    "arc_length_m",
+    "heading_cosine",
+    "heading_available",
+    "previous_step_m",
+    "previous_dt_s",
+    "previous_speed_mps",
+    "gap_over_5s",
+    "start_out_degree",
+    "end_in_degree"
+  ],
+  "evaluation": "results/optimization/boosting_bayesian_20.json",
+  "route_evaluation": "results/metrics/hgb_decoder.json"
+}

@@ -1,0 +1,101 @@
+{
+  "model": "boosting_bayesian_20.pkl",
+  "split": "student_test",
+  "scored_observations": 19143,
+  "classifier_top1": 0.8203520869247244,
+  "decoded_top1": 0.7926657263751763,
+  "classifier_pieces": 1989,
+  "decoded_pieces": 103,
+  "trips": [
+    {
+      "trip": "00000000",
+      "observations": 2503,
+      "pieces": 8,
+      "classifier_pieces": 110,
+      "scored": 2503,
+      "classifier": 0.9240910906911706,
+      "decoded": 0.9260886935677187
+    },
+    {
+      "trip": "00000007",
+      "observations": 1354,
+      "pieces": 1,
+      "classifier_pieces": 103,
+      "scored": 1354,
+      "classifier": 0.9113737075332349,
+      "decoded": 0.8412112259970458
+    },
+    {
+      "trip": "00000009",
+      "observations": 1049,
+      "pieces": 5,
+      "classifier_pieces": 50,
+      "scored": 1049,
+      "classifier": 0.8265014299332698,
+      "decoded": 0.8722592945662536
+    },
+    {
+      "trip": "00000040",
+      "observations": 2995,
+      "pieces": 33,
+      "classifier_pieces": 289,
+      "scored": 2995,
+      "classifier": 0.864440734557596,
+      "decoded": 0.8323873121869783
+    },
+    {
+      "trip": "00000052",
+      "observations": 262,
+      "pieces": 1,
+      "classifier_pieces": 11,
+      "scored": 262,
+      "classifier": 0.9427480916030534,
+      "decoded": 0.9961832061068703
+    },
+    {
+      "trip": "00000056",
+      "observations": 3958,
+      "pieces": 11,
+      "classifier_pieces": 446,
+      "scored": 3941,
+      "classifier": 0.8657701091093631,
+      "decoded": 0.8779497589444304
+    },
+    {
+      "trip": "00000065",
+      "observations": 768,
+      "pieces": 7,
+      "classifier_pieces": 114,
+      "scored": 768,
+      "classifier": 0.7916666666666666,
+      "decoded": 0.7213541666666666
+    },
+    {
+      "trip": "00000076",
+      "observations": 1486,
+      "pieces": 17,
+      "classifier_pieces": 138,
+      "scored": 1486,
+      "classifier": 0.7765814266487214,
+      "decoded": 0.82907133243607
+    },
+    {
+      "trip": "00000077",
+      "observations": 3911,
+      "pieces": 17,
+      "classifier_pieces": 639,
+      "scored": 3911,
+      "classifier": 0.6548197391971363,
+      "decoded": 0.5336231142930197
+    },
+    {
+      "trip": "00000091",
+      "observations": 874,
+      "pieces": 3,
+      "classifier_pieces": 89,
+      "scored": 874,
+      "classifier": 0.8226544622425629,
+      "decoded": 0.8180778032036613
+    }
+  ]
+}

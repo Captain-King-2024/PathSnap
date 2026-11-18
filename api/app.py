@@ -5,11 +5,11 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 
-from api.server import Demo, ROOT, health
+from api.server import DEFAULT_MODEL, Demo, ROOT, health
 
 demo = Demo(Path(os.getenv('PATHSNAP_DATA', ROOT / 'data/processed')),
             Path(os.getenv('PATHSNAP_LABELS', ROOT / 'data/labels')),
-            Path(os.getenv('PATHSNAP_MODEL', ROOT / 'models/logistic.npz')),
+            Path(os.getenv('PATHSNAP_MODEL', DEFAULT_MODEL)),
             os.getenv('PATHSNAP_SPLIT', 'student_test'))
 app = FastAPI(title='PathSnap')
 

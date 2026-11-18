@@ -1,0 +1,114 @@
+{
+  "server": "built-in HTTP, loopback",
+  "ui_http": 200,
+  "health": {
+    "status": "ok",
+    "service": "PathSnap",
+    "split": "student_test",
+    "trip_count": 10
+  },
+  "unknown_trip_http": 404,
+  "evaluator_smoke": "Ten student raw trips prepared into an isolated evaluator-format directory; one decoded without reference scores.",
+  "student_tests": [
+    {
+      "trip": "00000000",
+      "observations": 2503,
+      "pieces": 8,
+      "scores": {
+        "scored": 2503,
+        "classifier": 0.9240910906911706,
+        "decoded": 0.9260886935677187
+      }
+    },
+    {
+      "trip": "00000007",
+      "observations": 1354,
+      "pieces": 1,
+      "scores": {
+        "scored": 1354,
+        "classifier": 0.9113737075332349,
+        "decoded": 0.8412112259970458
+      }
+    },
+    {
+      "trip": "00000009",
+      "observations": 1049,
+      "pieces": 5,
+      "scores": {
+        "scored": 1049,
+        "classifier": 0.8265014299332698,
+        "decoded": 0.8722592945662536
+      }
+    },
+    {
+      "trip": "00000040",
+      "observations": 2995,
+      "pieces": 33,
+      "scores": {
+        "scored": 2995,
+        "classifier": 0.864440734557596,
+        "decoded": 0.8323873121869783
+      }
+    },
+    {
+      "trip": "00000052",
+      "observations": 262,
+      "pieces": 1,
+      "scores": {
+        "scored": 262,
+        "classifier": 0.9427480916030534,
+        "decoded": 0.9961832061068703
+      }
+    },
+    {
+      "trip": "00000056",
+      "observations": 3958,
+      "pieces": 11,
+      "scores": {
+        "scored": 3941,
+        "classifier": 0.8657701091093631,
+        "decoded": 0.8779497589444304
+      }
+    },
+    {
+      "trip": "00000065",
+      "observations": 768,
+      "pieces": 7,
+      "scores": {
+        "scored": 768,
+        "classifier": 0.7916666666666666,
+        "decoded": 0.7213541666666666
+      }
+    },
+    {
+      "trip": "00000076",
+      "observations": 1486,
+      "pieces": 17,
+      "scores": {
+        "scored": 1486,
+        "classifier": 0.7765814266487214,
+        "decoded": 0.82907133243607
+      }
+    },
+    {
+      "trip": "00000077",
+      "observations": 3911,
+      "pieces": 17,
+      "scores": {
+        "scored": 3911,
+        "classifier": 0.6548197391971363,
+        "decoded": 0.5336231142930197
+      }
+    },
+    {
+      "trip": "00000091",
+      "observations": 874,
+      "pieces": 3,
+      "scores": {
+        "scored": 874,
+        "classifier": 0.8226544622425629,
+        "decoded": 0.8180778032036613
+      }
+    }
+  ]
+}

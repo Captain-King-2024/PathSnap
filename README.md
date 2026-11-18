@@ -8,7 +8,7 @@ The trained small MLP scored 81.10% on the same aligned student-test observation
 
 The standalone Decision Tree scored 81.62% top-1 on the aligned student-test observations. See [its evaluation results](results/training/tree.json).
 
-Run `python -m api.server` from the repository root and open `http://127.0.0.1:8000` to review routes using logistic regression and the Viterbi decoder. See the [demo setup](api/README.md) for data prerequisites and network access.
+Run `python -m api.server` from the repository root and open `http://127.0.0.1:8000` to review routes using tuned Histogram Gradient Boosting and Viterbi. See the [demo setup](api/README.md) for data prerequisites and the FastAPI launcher.
 
 For a browser on a second laptop, follow the [two-laptop setup](deployment/README.md).
 

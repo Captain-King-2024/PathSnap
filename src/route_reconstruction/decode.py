@@ -4,7 +4,7 @@ import heapq
 import numpy as np
 
 
-def bounded_routes(graph, source, targets, limit):
+def bounded_routes(graph, source, targets, limit, predecessors=None):
     queue = [(0.0, int(source))]
     distances = {int(source): 0.0}
     found = {}
@@ -18,8 +18,39 @@ def bounded_routes(graph, source, targets, limit):
             total = distance + length
             if total <= limit and total < distances.get(end, np.inf):
                 distances[end] = total
+                if predecessors is not None:
+                    predecessors[end] = node
                 heapq.heappush(queue, (total, end))
     return found
+
+
+def connected_geometry(inputs, candidates, path, boundaries):
+    """Insert graph bridges between selected roads inside each decoded piece."""
+    arcs, lengths = inputs['arcs'], inputs['arc_length_m']
+    nodes = inputs['nodes_lonlat']
+    selected = candidates['candidate_arc_ids'][path]
+    fractions = candidates['features'][path, 2]
+    graph = {}
+    for (start, end), length in zip(arcs, lengths):
+        graph.setdefault(int(start), []).append((int(end), float(length)))
+    breaks = set(boundaries)
+    segments = []
+    for i, arc in enumerate(selected):
+        if i not in breaks:
+            previous = selected[i - 1]
+            if arc == previous and fractions[i] >= fractions[i - 1]:
+                continue
+            start, end = int(arcs[previous, 1]), int(arcs[arc, 0])
+            predecessors = {}
+            if start != end and bounded_routes(graph, start, {end}, 1200, predecessors):
+                bridge = []
+                while end != start:
+                    parent = predecessors[end]
+                    bridge.append(nodes[[parent, end]])
+                    end = parent
+                segments.extend(reversed(bridge))
+        segments.append(nodes[arcs[arc]])
+    return np.asarray(segments)
 
 
 def decode(inputs, candidates, probabilities, max_gap_s=15.0):
