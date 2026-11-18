@@ -1,5 +1,7 @@
 # Bayesian hyperparameter optimisation
 
+The completed 20-trial HGB experiment used the Gaussian-process runner because Optuna was unavailable. Reproduce it from the repository root with `python -m src.optimization.tune_gp` after preparing features and aligned labels. The runner uses the training dependencies, records all trial scores in `results/optimization/boosting_bayesian_20.json`, and saves the winning model to `models/boosting_bayesian_20.pkl`.
+
 Install the requirements and run from the repository root after generating candidate features and aligned labels.
 
 ```powershell

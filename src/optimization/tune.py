@@ -5,7 +5,6 @@ import pickle
 from pathlib import Path
 
 import numpy as np
-import optuna
 import sklearn
 from sklearn.ensemble import HistGradientBoostingClassifier
 from threadpoolctl import threadpool_limits
@@ -41,6 +40,8 @@ def grouped_folds(trips):
 
 
 def main():
+    import optuna
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--objective', choices=['macro_f1', 'top1_accuracy'], default='macro_f1')
     parser.add_argument('--trials', type=int, default=30)
