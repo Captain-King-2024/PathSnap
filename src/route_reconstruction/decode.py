@@ -1,4 +1,4 @@
-"""Decode directed road candidates with distance-based Viterbi transitions."""
+"""Score a road-state HMM and recover its best route with Viterbi."""
 import heapq
 
 import numpy as np
@@ -53,8 +53,18 @@ def connected_geometry(inputs, candidates, path, boundaries):
     return np.asarray(segments)
 
 
+def transition_log_score(road_distance, gps_displacement, distance_scale):
+    """Return the log of the distance-agreement factor for a reachable road."""
+    return -abs(road_distance - gps_displacement) / distance_scale
+
+
 def decode(inputs, candidates, probabilities, max_gap_s=15.0):
-    """Return one candidate row per observation and boundaries between route pieces."""
+    """Return the Viterbi path and the start index of each route piece.
+
+    The hidden state is the directed road candidate. Classifier probabilities
+    supply emission scores. Reachable transitions receive a distance-agreement
+    score, and disconnected transitions are excluded from the lattice.
+    """
     offsets = candidates['offsets']
     rows = candidates['candidate_arc_ids']
     arcs = inputs['arcs']
@@ -63,11 +73,11 @@ def decode(inputs, candidates, probabilities, max_gap_s=15.0):
     graph = {}
     for (start, end), length in zip(arcs, lengths):
         graph.setdefault(int(start), []).append((int(end), float(length)))
-    logp = np.log(np.clip(probabilities, 1e-8, 1.0))
+    emission_log_scores = np.log(np.clip(probabilities, 1e-8, 1.0))
     back = np.full(len(rows), -1, dtype=np.int64)
     path = np.empty(len(offsets) - 1, dtype=np.int64)
     boundaries = [0]
-    previous = logp[:offsets[1]]
+    previous = emission_log_scores[:offsets[1]]
 
     def close_piece(end, scores):
         best = offsets[end] + int(scores.argmax())
@@ -100,16 +110,16 @@ def decode(inputs, candidates, probabilities, max_gap_s=15.0):
                     if old == new and fraction[k] >= fraction[j]:
                         road = min(road, (fraction[k] - fraction[j]) * lengths[old])
                     if road <= limit:
-                        score = previous[j - left] - abs(road - step) / tolerance
+                        score = previous[j - left] + transition_log_score(road, step, tolerance)
                         if score > current[k - middle]:
                             current[k - middle] = score
                             back[k] = j
         if np.isfinite(current).any():
-            previous = current + logp[middle:right]
+            previous = current + emission_log_scores[middle:right]
             previous -= np.max(previous)
         else:
             close_piece(i - 1, previous)
             boundaries.append(i)
-            previous = logp[middle:right]
+            previous = emission_log_scores[middle:right]
     close_piece(len(path) - 1, previous)
     return path, boundaries

@@ -74,7 +74,7 @@ class Demo:
         selected_geometry = inputs['nodes_lonlat'][inputs['arcs'][selected]]
         review_arcs = np.unique(ids)
         roads = inputs['nodes_lonlat'][inputs['arcs'][review_arcs]]
-        result = dict(trip=trip, model=f'{self.model_name} + Viterbi',
+        result = dict(trip=trip, model=f'{self.model_name} + HMM/Viterbi',
                       observations=len(selected), pieces=len(breaks), breaks=breaks,
                       classifier_pieces=len(classifier_breaks),
                       gps=inputs['gps_lonlat'].tolist(), snapped=snapped.tolist(),
