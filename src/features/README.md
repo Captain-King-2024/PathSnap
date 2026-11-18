@@ -23,3 +23,9 @@ A verification run independently recalculated all 12 features for 1,500,896 save
 
 In a separate diagnostic, at least one arc from anywhere on the trip's reference route appeared among the candidates for 186,820 of 208,417 training observations and 19,132 of 19,160 student-testing observations. These fractions are upper bounds on pointwise candidate coverage against labels drawn from the supplied routes. They do not establish which reference arc belongs to any given observation. No zero-length segments appeared among the saved candidates.
 
+After reference alignment, run `python src/features/audit.py` to reproduce the per-trip audit and summary in `results/feature_audit`. The audit regenerates the saved features, compares sampled queries and every fallback with exhaustive search, and measures fallback ranking time with full and partial sorting. Fallback still computes distances to all roads. Projection error is measured against spherical great-circle distances on all road segments and successive GPS points. The graph audit reports directed degree, sources, sinks, duplicate arcs and reciprocal arcs alongside the earlier weak-connectivity inventory.
+
+Aligned candidate recall uses observations within 100 m of their assigned reference arc. The assignment is estimated by monotonic route alignment, and observations beyond that distance are reported as excluded. The model metrics use this same alignment rule.
+
+Use `python src/features/audit.py --full-max-observations 500` to check every observation in trips with up to 500 points. Larger trips retain seeded sampling and exhaustive checks of all fallbacks. The per-trip output records which trips were checked in full.
+

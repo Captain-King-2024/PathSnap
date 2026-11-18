@@ -2,7 +2,13 @@
 
 Distributed map-matching and route reconstruction.
 
-Status: scaffold only. Implementation, trained models, experimental results and deployment are pending.
+Preprocessing, road candidate generation, feature extraction, reference-route alignment, the training runner, and dataset audits are implemented. Logistic regression is trained and reproduced across three trip-grouped validation folds. It scored 80.48% top-1 on the aligned student-test observations, against 54.30% for nearest road.
+
+The trained small MLP scored 81.10% on the same aligned student-test observations. The other comparison models are K-nearest neighbors (KNN), random forest, and histogram gradient boosting. Their results have yet to be added to this repository. Final model selection and Bayesian optimisation are pending.
+
+Run `python -m api.server` from the repository root and open `http://127.0.0.1:8000` to review routes using logistic regression and the Viterbi decoder. See the [demo setup](api/README.md) for data prerequisites and network access.
+
+For a browser on a second laptop, follow the [two-laptop setup](deployment/README.md).
 
 The deliverables PDF specifies components, not exact folder names. The folders below cover those components.
 
@@ -19,7 +25,9 @@ The deliverables PDF specifies components, not exact folder names. The folders b
 | ui | Laptop 2 evaluator interface. Request the ten reserved trip IDs from the API, send selection and display predicted route and metrics. |
 | deployment | Installation, execution and two-laptop deployment instructions, dependency locks and launch scripts. Record actual tested commands here once implemented. |
 | configs | Versioned model, feature, decoder and Bayesian search configuration. Never store secrets. |
-| models | Saved trained classifier, fitted preprocessing and inference configuration. Use Git LFS or release assets if required by file size. No model has been trained yet. |
+| models | Trained logistic regression weights and fitted feature scaling. |
+| results/training | Logistic regression and nearest-road baseline metrics. |
+| results/feature_audit | Candidate-search, projection, and alignment coverage diagnostics. |
 | results/metrics | Actual model comparison CSVs and classifier/HMM evaluation summaries. |
 | results/figures | Plots generated from real experiment outputs. Do not fabricate training curves. |
 | results/maps | Interactive Folium HTML maps from actual trips. |
@@ -33,9 +41,9 @@ The deliverables PDF specifies components, not exact folder names. The folders b
 
 ## Setup
 
-Clone this repository, then add verified dependency and execution instructions under deployment/ as implementation is completed. No runnable application exists yet.
+Follow the [training setup](src/training/README.md) to prepare the supplied dataset and reproduce the results. See the [feature audit instructions](src/features/README.md) for search checks.
 
 ## Submission
 
-Submit this public repository and one consolidated technical PDF. Use real experiment results only. Keep evaluator reference labels server-side and outside model inputs and UI responses. AI assisted with the initial folder organisation and documentation; no experimental results are claimed.
+Submit this public repository and one consolidated technical PDF. Keep evaluator reference labels server-side and outside model inputs and UI responses. Disclose AI assistance in the submission as required by the hackathon.
 

@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PathSnap | Route review</title>
+<style>
+:root{color-scheme:light;--ink:#10283b;--muted:#506579;--line:#dce6eb;--accent:#087f6c;--paper:#f3f7f7}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 system-ui,sans-serif}
+header{background:#10283b;color:#e9fffb;padding:18px max(24px,calc((100vw - 1240px)/2));font-weight:750;letter-spacing:.06em}
+main{max-width:1290px;margin:auto;padding:34px 24px}h1{font-size:clamp(30px,4vw,48px);line-height:1.12;margin:0 0 8px;letter-spacing:-.045em}
+h2{font-size:18px;margin:0}.context{margin:0;color:var(--muted)}.layout{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:18px;margin-top:24px}
+.card{background:white;border:1px solid var(--line);border-radius:16px;overflow:hidden}.panel{padding:19px}.map-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px}
+canvas{display:block;width:100%;height:clamp(390px,61vh,650px);background:#edf4f3;cursor:grab;touch-action:none}
+.legend{padding:13px 18px;display:flex;gap:15px;flex-wrap:wrap;color:var(--muted);font-size:13px}.legend label{white-space:nowrap}
+input{accent-color:var(--accent)}select,button{font:inherit;border-radius:8px;padding:9px 12px;border:1px solid #c7d7dd;color:var(--ink);background:white}
+button{cursor:pointer;font-weight:650}button:disabled{opacity:.55;cursor:wait}.primary{width:100%;margin-top:10px;background:var(--accent);color:white;border-color:var(--accent)}
+select{width:100%;margin-top:6px}dl{margin:15px 0 0}dl div{display:flex;justify-content:space-between;gap:8px;padding:9px 0;border-top:1px solid var(--line)}dt,.note{color:var(--muted)}dd{margin:0;font-weight:750;font-variant-numeric:tabular-nums}#status{min-height:45px;margin:12px 0;color:var(--muted)}
+.controls{display:flex;gap:5px}.controls button{padding:5px 10px}.note{font-size:12px;margin:12px 0 0}.raw{color:#315bdc}.match{color:#087f6c}.roads{color:#536a78}
+@media(max-width:750px){.layout{grid-template-columns:1fr}.panel{grid-row:1}main{padding:22px 14px}canvas{height:440px}}
+</style>
+<header>PATHSNAP</header>
+<main>
+  <h1>GPS route review</h1>
+  <p class="context" id="context">Select a trip to compare raw GPS points with the matched roads.</p>
+  <div class="layout">
+    <section class="card" aria-label="Route map">
+      <div class="map-head"><h2>Route map</h2><div class="controls"><button id="out" aria-label="Zoom out">−</button><button id="in" aria-label="Zoom in">+</button><button id="reset">Fit</button></div></div>
+      <canvas id="map" aria-label="Map of GPS observations, matched roads, and nearby road network"></canvas>
+      <div class="legend">
+        <label class="raw"><input id="gps" type="checkbox" checked> Raw GPS</label>
+        <label class="match"><input id="matched" type="checkbox" checked> Matched roads</label>
+        <label class="roads"><input id="roads" type="checkbox" checked> Candidate roads</label>
+      </div>
+    </section>
+    <aside class="card panel">
+      <label for="trip"><strong>Trip</strong></label><select id="trip" disabled></select>
+      <button class="primary" id="run" disabled>Match route</button>
+      <p id="status" role="status">Loading trips…</p>
+      <dl>
+        <div><dt>GPS observations</dt><dd id="count">—</dd></div>
+        <div><dt>Route pieces</dt><dd id="pieces">—</dd></div>
+        <div><dt>Classifier top-1</dt><dd id="baseline">—</dd></div>
+        <div><dt>Decoded top-1</dt><dd id="decoded">—</dd></div>
+      </dl>
+      <p class="note" id="note"></p>
+      <label for="view"><strong>Road selection</strong></label>
+      <select id="view"><option value="matched_segments">Viterbi decoder</option><option value="classifier_segments">Classifier only</option></select>
+    </aside>
+  </div>
+</main>
+<script>
+const get = id => document.getElementById(id);
+const canvas = get('map'), ctx = canvas.getContext('2d');
+let route, center = [0,0], span = [1,1], cosLat = 1, zoom = 1, pan = [0,0], drag;
+function fit() {
+  const min = [Infinity,Infinity], max = [-Infinity,-Infinity];
+  for (const p of [...route.gps, ...route.snapped]) for (let i=0;i<2;i++) {
+    min[i]=Math.min(min[i],p[i]); max[i]=Math.max(max[i],p[i]);
+  }
+  center=min.map((v,i)=>(v+max[i])/2); cosLat=Math.cos(center[1]*Math.PI/180);
+  span=[Math.max(1e-5,(max[0]-min[0])*cosLat),Math.max(1e-5,max[1]-min[1])];
+  zoom=1; pan=[0,0]; draw();
+}
+function draw() {
+  const w=canvas.clientWidth, h=canvas.clientHeight, dpr=devicePixelRatio || 1;
+  canvas.width=Math.round(w*dpr); canvas.height=Math.round(h*dpr);
+  ctx.scale(dpr,dpr);
+  ctx.strokeStyle='#dae7e5';ctx.lineWidth=1;ctx.beginPath();
+  for(let x=24;x<w;x+=40){ctx.moveTo(x,0);ctx.lineTo(x,h);}
+  for(let y=24;y<h;y+=40){ctx.moveTo(0,y);ctx.lineTo(w,y);}
+  ctx.stroke();
+  if (!route) return;
+  const scale=Math.min(Math.max(1,w-56)/span[0],Math.max(1,h-56)/span[1])*zoom;
+  const point=p=>[w/2+pan[0]+(p[0]-center[0])*cosLat*scale,h/2+pan[1]-(p[1]-center[1])*scale];
+  function lines(segments,color,width) {
+    ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap='round';ctx.beginPath();
+    for(const [a,b] of segments){ctx.moveTo(...point(a));ctx.lineTo(...point(b));}
+    ctx.stroke();
+  }
+  if(get('roads').checked)lines(route.roads,'#a3b2bc',1);
+  if(get('matched').checked)lines(route[get('view').value],'#087f6c',3);
+  if(get('gps').checked){
+    ctx.fillStyle='#315bdcaa';ctx.beginPath();
+    for(const p of route.gps){const [x,y]=point(p);ctx.moveTo(x+2,y);ctx.arc(x,y,2,0,2*Math.PI);}
+    ctx.fill();
+  }
+}
+function changeZoom(factor){zoom=Math.min(32,Math.max(.3,zoom*factor));draw();}
+get('in').onclick=()=>changeZoom(1.4);
+get('out').onclick=()=>changeZoom(1/1.4);
+get('reset').onclick=()=>{if(route)fit();};
+for(const id of ['gps','matched','roads','view'])get(id).onchange=draw;
+canvas.onpointerdown=e=>{canvas.setPointerCapture(e.pointerId);drag=[e.clientX,e.clientY];};
+canvas.onpointermove=e=>{if(drag){pan[0]+=e.clientX-drag[0];pan[1]+=e.clientY-drag[1];drag=[e.clientX,e.clientY];draw();}};
+canvas.onpointerup=canvas.onpointercancel=()=>{drag=null;};
+new ResizeObserver(draw).observe(canvas);
+async function json(url) {
+  const response=await fetch(url);const data=await response.json();
+  if(!response.ok)throw Error(data.error || data.detail || 'Request failed');
+  return data;
+}
+const percent=value=>value==null?'—':(value*100).toFixed(2)+'%';
+async function match(){
+  get('run').disabled=get('trip').disabled=true;
+  get('status').textContent='Matching roads…';
+  try{
+    route=await json('/api/match/'+encodeURIComponent(get('trip').value));
+    get('count').textContent=route.observations.toLocaleString();
+    get('pieces').textContent=route.pieces.toLocaleString();
+    get('baseline').textContent=percent(route.scores?.classifier);
+    get('decoded').textContent=percent(route.scores?.decoded);
+    get('note').textContent=route.scores?route.scores.scored.toLocaleString()+' reference-aligned observations scored.':'Reference scores unavailable for this trip.';
+    get('status').textContent=route.model;
+    fit();
+  }catch(error){get('status').textContent=error.message;}
+  finally{get('run').disabled=get('trip').disabled=false;}
+}
+get('run').onclick=match;
+json('/api/trips').then(data=>{
+  get('context').textContent=data.split==='student_test'?'Student test split · reference-aligned scores shown when available.':'Evaluator split · route review.';
+  for(const trip of data.trips)get('trip').add(new Option(trip,trip));
+  return match();
+}).catch(error=>{get('status').textContent=error.message;});
+</script>
+</html>

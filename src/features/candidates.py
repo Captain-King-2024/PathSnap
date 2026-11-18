@@ -23,8 +23,18 @@ def project_to_segments(point, starts, vectors, squared_lengths):
     return np.linalg.norm(snapped - point, axis=1), fraction, snapped
 
 
+def nearest_order(distances, arc_ids, k):
+    """Order the closest k arcs, resolving cutoff ties by arc ID."""
+    if len(distances) <= k:
+        return np.lexsort((arc_ids, distances))
+    cutoff = np.partition(distances, k - 1)[k - 1]
+    # Distances equal to the cutoff must be considered before breaking ties.
+    eligible = np.flatnonzero(distances <= cutoff)
+    return eligible[np.lexsort((arc_ids[eligible], distances[eligible]))[:k]]
+
+
 def generate(inputs, radius=100.0, k=8):
-    if radius <= 0 or k < 1:
+    if not np.isfinite(radius) or radius <= 0 or k < 1:
         raise ValueError('radius must be positive and k must be at least one')
     points, timestamps = inputs['gps_xy'], inputs['timestamps']
     arcs, nodes = inputs['arcs'], inputs['nodes_xy']
@@ -48,19 +58,21 @@ def generate(inputs, radius=100.0, k=8):
     outgoing = np.bincount(arcs[:, 0], minlength=len(nodes))
     incoming = np.bincount(arcs[:, 1], minlength=len(nodes))
     features, selected, snapped_points, offsets, fallbacks = [], [], [], [0], []
+    all_arcs = np.arange(len(arcs))
+    empty = np.empty(0, dtype=np.int64)
     for i, point in enumerate(points):
         cell = tuple(np.floor(point / radius).astype(int))
-        pool = grid.get(cell, np.array([], dtype=np.int64))
+        pool = grid.get(cell, empty)
         distances, fractions, snaps = project_to_segments(point, starts[pool], vectors[pool], squared[pool])
         keep = distances <= radius
         fallback = not keep.any()
         if fallback:
-            pool = np.arange(len(arcs))
+            pool = all_arcs
             distances, fractions, snaps = project_to_segments(point, starts, vectors, squared)
         else:
             pool, distances, fractions, snaps = pool[keep], distances[keep], fractions[keep], snaps[keep]
         # Ties are deterministic and preserve directed arc identity.
-        order = np.lexsort((arc_ids[pool], distances))[:k]
+        order = nearest_order(distances, arc_ids[pool], k)
         ids, ds, fs, ss = pool[order], distances[order], fractions[order], snaps[order]
         dt = float(timestamps[i] - timestamps[i - 1]) if i else 0.0
         movement = point - points[i - 1] if i else np.zeros(2)
