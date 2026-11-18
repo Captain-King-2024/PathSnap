@@ -4,7 +4,9 @@ Distributed map-matching and route reconstruction.
 
 Preprocessing, road candidate generation, feature extraction, reference-route alignment, the training runner, and dataset audits are implemented. Logistic regression is trained and reproduced across three trip-grouped validation folds. It scored 80.48% top-1 on the aligned student-test observations, against 54.30% for nearest road.
 
-Measured runs for decision tree, random forest, histogram gradient boosting, and MLP are pending. Model selection, Bayesian optimisation, HMM/Viterbi route reconstruction, and API/UI deployment are subsequent stages.
+The trained small MLP scored 81.10% on the same aligned student-test observations. Decision tree, random forest, and histogram gradient boosting results, final model selection, and Bayesian optimisation are pending.
+
+Run `python -m api.server` from the repository root and open `http://127.0.0.1:8000` to review routes using logistic regression and the Viterbi decoder. See the [demo setup](api/README.md) for data prerequisites and network access.
 
 The deliverables PDF specifies components, not exact folder names. The folders below cover those components.
 
