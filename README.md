@@ -8,6 +8,8 @@ The trained small MLP scored 81.10% on the same aligned student-test observation
 
 Run `python -m api.server` from the repository root and open `http://127.0.0.1:8000` to review routes using logistic regression and the Viterbi decoder. See the [demo setup](api/README.md) for data prerequisites and network access.
 
+For a browser on a second laptop, follow the [two-laptop setup](deployment/README.md).
+
 The deliverables PDF specifies components, not exact folder names. The folders below cover those components.
 
 | Folder | Purpose |

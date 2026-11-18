@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 
-from api.server import Demo, ROOT
+from api.server import Demo, ROOT, health
 
 demo = Demo(Path(os.getenv('PATHSNAP_DATA', ROOT / 'data/processed')),
             Path(os.getenv('PATHSNAP_LABELS', ROOT / 'data/labels')),
@@ -22,6 +22,11 @@ def index():
 @app.get('/api/trips')
 def trips():
     return {'trips': demo.trip_ids, 'split': demo.split}
+
+
+@app.get('/api/health')
+def health_check():
+    return health(demo)
 
 
 @app.get('/api/match/{trip}')

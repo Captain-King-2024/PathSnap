@@ -16,6 +16,11 @@ from src.training.train import scores
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def health(demo):
+    return {'status': 'ok', 'service': 'PathSnap', 'split': demo.split,
+            'trip_count': len(demo.trip_ids)}
+
+
 class Demo:
     def __init__(self, data, labels, model, split):
         self.data, self.labels = data / split, labels / split
@@ -84,6 +89,8 @@ def make_handler(demo):
             path = urlsplit(self.path).path
             if path == '/':
                 self.send((ROOT / 'ui/index.html').read_bytes(), 'text/html; charset=utf-8')
+            elif path == '/api/health':
+                self.json(health(demo))
             elif path == '/api/trips':
                 self.json(dict(trips=demo.trip_ids, split=demo.split))
             elif path.startswith('/api/match/'):
