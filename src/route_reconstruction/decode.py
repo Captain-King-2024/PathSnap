@@ -29,7 +29,6 @@ def connected_geometry(inputs, candidates, path, boundaries):
     arcs, lengths = inputs['arcs'], inputs['arc_length_m']
     nodes = inputs['nodes_lonlat']
     selected = candidates['candidate_arc_ids'][path]
-    fractions = candidates['features'][path, 2]
     graph = {}
     for (start, end), length in zip(arcs, lengths):
         graph.setdefault(int(start), []).append((int(end), float(length)))
@@ -38,7 +37,7 @@ def connected_geometry(inputs, candidates, path, boundaries):
     for i, arc in enumerate(selected):
         if i not in breaks:
             previous = selected[i - 1]
-            if arc == previous and fractions[i] >= fractions[i - 1]:
+            if arc == previous:
                 continue
             start, end = int(arcs[previous, 1]), int(arcs[arc, 0])
             predecessors = {}
@@ -104,11 +103,13 @@ def decode(inputs, candidates, probabilities, max_gap_s=15.0):
                     cache[end] = bounded_routes(graph, end, targets, limit)
                 for k in range(middle, right):
                     new = rows[k]
-                    road = ((1 - fraction[j]) * lengths[old]
-                            + cache[end].get(int(arcs[new, 0]), np.inf)
-                            + fraction[k] * lengths[new])
-                    if old == new and fraction[k] >= fraction[j]:
-                        road = min(road, (fraction[k] - fraction[j]) * lengths[old])
+                    if old == new:
+                        # Backward GPS jitter on the same arc needs no network loop.
+                        road = abs(fraction[k] - fraction[j]) * lengths[old]
+                    else:
+                        road = ((1 - fraction[j]) * lengths[old]
+                                + cache[end].get(int(arcs[new, 0]), np.inf)
+                                + fraction[k] * lengths[new])
                     if road <= limit:
                         score = previous[j - left] + transition_log_score(road, step, tolerance)
                         if score > current[k - middle]:
