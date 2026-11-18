@@ -1,4 +1,4 @@
-"""Tune PathSnap's Random Forest using Optuna and trip-grouped cross-validation."""
+"""Tune PathSnap's Histogram Gradient Boosting using Optuna and trip-grouped cross-validation."""
 import argparse
 import json
 import pickle
@@ -7,25 +7,25 @@ from pathlib import Path
 import numpy as np
 import optuna
 import sklearn
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier
 from threadpoolctl import threadpool_limits
 
 from src.training.train import SEED, combine, evaluate, load_trips
 
-BASELINE = dict(n_estimators=40, max_depth=14, max_samples=0.25,
-                min_samples_leaf=20, max_features='sqrt')
+BASELINE = dict(max_iter=120, max_leaf_nodes=31, learning_rate=0.1,
+                min_samples_leaf=20, l2_regularization=0.0)
 
 
 def parameters(trial):
-    return dict(n_estimators=trial.suggest_int('n_estimators', 40, 120, step=20),
-                max_depth=trial.suggest_int('max_depth', 8, 24),
-                max_samples=trial.suggest_float('max_samples', 0.15, 0.50, step=0.05),
-                min_samples_leaf=trial.suggest_int('min_samples_leaf', 5, 80, log=True),
-                max_features=trial.suggest_categorical('max_features', ['sqrt', 'log2', 0.5]))
+    return dict(max_iter=trial.suggest_int('max_iter', 60, 240),
+                max_leaf_nodes=trial.suggest_int('max_leaf_nodes', 15, 63),
+                learning_rate=trial.suggest_float('learning_rate', 0.02, 0.25, log=True),
+                min_samples_leaf=trial.suggest_int('min_samples_leaf', 10, 160, log=True),
+                l2_regularization=trial.suggest_float('l2_regularization', 0.0, 5.0))
 
 
-def estimator(params, jobs):
-    return RandomForestClassifier(random_state=SEED, n_jobs=jobs, bootstrap=True, **params)
+def estimator(params):
+    return HistGradientBoostingClassifier(random_state=SEED, early_stopping=False, **params)
 
 
 def grouped_folds(trips):
@@ -64,28 +64,28 @@ def main():
         values = []
         for i, validation in enumerate(validation_sets):
             x, y, _, _ = combine([t for j, fold in enumerate(folds) if j != i for t in fold])
-            model = estimator(params, args.threads).fit(x, y)
-            values.append(evaluate('forest', model, validation)[args.objective])
+            model = estimator(params).fit(x, y)
+            values.append(evaluate('boosting', model, validation)[args.objective])
         trial.set_user_attr('fold_scores', values)
         return float(np.mean(values))
 
     study = optuna.create_study(direction='maximize',
                                 sampler=optuna.samplers.TPESampler(seed=SEED, n_startup_trials=5))
     study.enqueue_trial(BASELINE)
-    with threadpool_limits(limits=1):
+    with threadpool_limits(limits=args.threads):
         study.optimize(objective, n_trials=args.trials, n_jobs=1)
         student = load_trips(args.features, args.labels, 'student_test', names)
         if {t[0] for t in train} & {t[0] for t in student}:
             raise ValueError('Train and student-test trip IDs overlap.')
         test = combine(student)
         x, y, _, _ = combine(train)
-        baseline = estimator(BASELINE, args.threads).fit(x, y)
-        tuned = estimator(study.best_params, args.threads).fit(x, y)
+        baseline = estimator(BASELINE).fit(x, y)
+        tuned = estimator(study.best_params).fit(x, y)
         held_out = {
-            'baseline': evaluate('forest', baseline, test),
-            'tuned': evaluate('forest', tuned, test),
+            'baseline': evaluate('boosting', baseline, test),
+            'tuned': evaluate('boosting', tuned, test),
         }
-    report = dict(model='forest', objective=args.objective, seed=SEED,
+    report = dict(model='boosting', objective=args.objective, seed=SEED,
                   baseline_params=BASELINE, best_params=study.best_params,
                   best_trial=study.best_trial.number, best_cv=float(study.best_value),
                   fold_trip_ids=[[trip[0] for trip in fold] for fold in folds],
@@ -94,8 +94,8 @@ def main():
                   trials=[dict(number=t.number, params=t.params, value=t.value,
                                state=t.state.name, fold_scores=t.user_attrs.get('fold_scores'))
                           for t in study.trials])
-    report_path = Path('results/optimization/forest_bayesian.json')
-    model_path = Path('models/forest_bayesian.pkl')
+    report_path = Path('results/optimization/boosting_bayesian.json')
+    model_path = Path('models/boosting_bayesian.pkl')
     report_path.parent.mkdir(parents=True, exist_ok=True)
     model_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
