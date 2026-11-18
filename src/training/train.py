@@ -147,7 +147,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--features', type=Path, default=Path('data/features'))
     parser.add_argument('--labels', type=Path, default=Path('data/labels'))
-    parser.add_argument('--output', type=Path, default=Path('results/training'))
+    parser.add_argument('--output', type=Path, default=Path('results/training'),
+                        help='Directory for evaluation reports')
+    parser.add_argument('--model-dir', type=Path, default=Path('models'),
+                        help='Directory for trained model artifacts')
     parser.add_argument('--models', nargs='+', choices=MODELS, default=MODELS)
     parser.add_argument('--folds', type=int, default=3, choices=range(2, 6))
     parser.add_argument('--jobs', type=int, default=2)
@@ -174,6 +177,7 @@ def main():
         folds[fold].append(train[i])
         sizes[fold] += len(train[i][3])
     args.output.mkdir(parents=True, exist_ok=True)
+    args.model_dir.mkdir(parents=True, exist_ok=True)
     test = combine(student)
     _, y, counts, total = test
     nearest = np.zeros(len(y))
@@ -202,9 +206,9 @@ def main():
                       cv_top1=float(np.mean([f['top1_accuracy'] for f in cv])), final_fit_seconds=fit_seconds,
                       student_test=evaluate(name, model, test))
         if name == 'logistic':
-            np.savez_compressed(args.output / 'logistic.npz', **model, feature_names=names)
+            np.savez_compressed(args.model_dir / 'logistic.npz', **model, feature_names=names)
         else:
-            with (args.output / f'{name}.pkl').open('wb') as handle:
+            with (args.model_dir / f'{name}.pkl').open('wb') as handle:
                 pickle.dump(dict(model=model, feature_names=names, sklearn_version=sklearn.__version__), handle)
             if name == 'mlp':
                 result['train_loss_by_epoch'] = model[-1].loss_curve_

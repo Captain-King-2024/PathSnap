@@ -13,7 +13,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe src/training/train.py
 ```
 
-If processed data and features are already present, start with alignment. Teammates can split the work by passing `--models tree forest` or `--models boosting mlp`. Use the default three folds and seed across runs. Each model writes its own JSON and artifact under `results/training`. Keep each teammate's output in a separate directory with `--output` when sharing a machine. Logistic regression can run with NumPy alone using `--models logistic`.
+If processed data and features are already present, start with alignment. Teammates can split the work by passing `--models tree forest` or `--models boosting mlp`. Use the default three folds and seed across runs. Each model writes its metrics under `results/training/` and its fitted artifact under `models/`. Use `--output` to override the metrics directory and `--model-dir` to override the artifact directory. Logistic regression can run with NumPy alone using `--models logistic`.
 
 Alignment uses dynamic programming to minimize clipped squared GPS-to-segment distance while moving forward through the reference route. It allows staying on one arc and skipping arcs. GPS points more than 100 m from their aligned arc are excluded from fitting and scored metrics. These targets are approximate and may be ambiguous on loops, parallel roads and junctions. Alignment uses reference routes and is only a supervision step. Inference uses candidate features.
 

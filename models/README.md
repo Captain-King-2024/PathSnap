@@ -1,6 +1,6 @@
 # models
 
-Saved trained classifier, fitted preprocessing and inference configuration. Use Git LFS or release assets if required by file size. No model has been trained yet.
+`logistic.npz` contains the trained logistic regression weights, feature names, and fitted scaling parameters. Evaluation metrics are in [logistic.json](../results/training/logistic.json).
 
-Status: reserved for implementation or verified outputs.
+The training runner saves fitted model artifacts here by default. Use Git LFS or release assets if a future model exceeds repository size limits.
 
