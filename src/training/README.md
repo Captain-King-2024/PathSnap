@@ -1,6 +1,6 @@
 # training
 
-Training code for at least five distinct models. Save seeds, configurations, fitted preprocessing and artifacts.
+Training code for six models, including a standalone Decision Tree. Run `python src/training/train.py --models tree` to train only that model.
 
 From the repository root, run these commands in PowerShell with Python 3.11–3.13. Replace the dataset path with the local directory containing `train` and `student_test`.
 

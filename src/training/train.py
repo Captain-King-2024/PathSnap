@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 
-MODELS = ['logistic', 'knn', 'forest', 'boosting', 'mlp']
+MODELS = ['logistic', 'knn', 'forest', 'boosting', 'mlp', 'tree']
 SEED = 557
 
 
@@ -85,13 +85,16 @@ def fit(name, x, y, jobs):
     from sklearn.neural_network import MLPClassifier
     from sklearn.pipeline import make_pipeline
     from sklearn.preprocessing import StandardScaler
+    from sklearn.tree import DecisionTreeClassifier
 
     if name == 'knn':
         classifier = KNeighborsClassifier(n_neighbors=15, weights='distance',
                                            algorithm='kd_tree', n_jobs=jobs)
         model = make_pipeline(StandardScaler(), classifier)
         return model.fit(x, y), dict(scaling='StandardScaler', **classifier.get_params())
-    if name == 'forest':
+    if name == 'tree':
+        model = DecisionTreeClassifier(max_depth=8, min_samples_leaf=40, random_state=SEED)
+    elif name == 'forest':
         model = RandomForestClassifier(n_estimators=40, max_depth=14, max_samples=0.25,
                                        min_samples_leaf=20, n_jobs=jobs, random_state=SEED)
     elif name == 'boosting':

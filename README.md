@@ -6,6 +6,8 @@ Preprocessing, road candidate generation, feature extraction, reference-route al
 
 The trained small MLP scored 81.10% on the same aligned student-test observations. The other comparison models are K-nearest neighbors (KNN), random forest, and histogram gradient boosting. Their results have yet to be added to this repository. Final model selection and Bayesian optimisation are pending.
 
+The standalone Decision Tree scored 81.62% top-1 on the aligned student-test observations. See [its evaluation results](results/training/tree.json).
+
 Run `python -m api.server` from the repository root and open `http://127.0.0.1:8000` to review routes using logistic regression and the Viterbi decoder. See the [demo setup](api/README.md) for data prerequisites and network access.
 
 For a browser on a second laptop, follow the [two-laptop setup](deployment/README.md).
