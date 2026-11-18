@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 
-MODELS = ['logistic', 'knn', 'forest', 'boosting', 'mlp']
+MODELS = ['logistic', 'tree', 'forest', 'boosting', 'mlp']
 SEED = 557
 
 
@@ -81,17 +81,14 @@ def fit(name, x, y, jobs):
     if name == 'logistic':
         return fit_logistic(x, y), dict(l2=0.001, max_iter=20, standardized_clip=20)
     from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
-    from sklearn.neighbors import KNeighborsClassifier
     from sklearn.neural_network import MLPClassifier
     from sklearn.pipeline import make_pipeline
     from sklearn.preprocessing import StandardScaler
+    from sklearn.tree import DecisionTreeClassifier
 
-    if name == 'knn':
-        classifier = KNeighborsClassifier(n_neighbors=15, weights='distance',
-                                           algorithm='kd_tree', n_jobs=jobs)
-        model = make_pipeline(StandardScaler(), classifier)
-        return model.fit(x, y), dict(scaling='StandardScaler', **classifier.get_params())
-    if name == 'forest':
+    if name == 'tree':
+        model = DecisionTreeClassifier(max_depth=8, min_samples_leaf=40, random_state=SEED)
+    elif name == 'forest':
         model = RandomForestClassifier(n_estimators=40, max_depth=14, max_samples=0.25,
                                        min_samples_leaf=20, n_jobs=jobs, random_state=SEED)
     elif name == 'boosting':
@@ -150,14 +147,20 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--features', type=Path, default=Path('data/features'))
     parser.add_argument('--labels', type=Path, default=Path('data/labels'))
-    parser.add_argument('--output', type=Path, default=Path('results/training'),
-                        help='Directory for evaluation reports')
-    parser.add_argument('--model-dir', type=Path, default=Path('models'),
-                        help='Directory for trained model artifacts')
+    parser.add_argument('--output', type=Path, default=Path('results/training'))
     parser.add_argument('--models', nargs='+', choices=MODELS, default=MODELS)
     parser.add_argument('--folds', type=int, default=3, choices=range(2, 6))
     parser.add_argument('--jobs', type=int, default=2)
     args = parser.parse_args()
+
+    # Automatically resolve paths if invoked from src/training/ or a subdirectory
+    if not (args.features / 'train').exists():
+        repo_root = Path(__file__).resolve().parents[2]
+        if (repo_root / args.features / 'train').exists():
+            args.features = repo_root / args.features
+            args.labels = repo_root / args.labels
+            args.output = repo_root / args.output
+
     if set(args.models) - {'logistic'}:
         try:
             import sklearn
@@ -180,7 +183,6 @@ def main():
         folds[fold].append(train[i])
         sizes[fold] += len(train[i][3])
     args.output.mkdir(parents=True, exist_ok=True)
-    args.model_dir.mkdir(parents=True, exist_ok=True)
     test = combine(student)
     _, y, counts, total = test
     nearest = np.zeros(len(y))
@@ -209,9 +211,9 @@ def main():
                       cv_top1=float(np.mean([f['top1_accuracy'] for f in cv])), final_fit_seconds=fit_seconds,
                       student_test=evaluate(name, model, test))
         if name == 'logistic':
-            np.savez_compressed(args.model_dir / 'logistic.npz', **model, feature_names=names)
+            np.savez_compressed(args.output / 'logistic.npz', **model, feature_names=names)
         else:
-            with (args.model_dir / f'{name}.pkl').open('wb') as handle:
+            with (args.output / f'{name}.pkl').open('wb') as handle:
                 pickle.dump(dict(model=model, feature_names=names, sklearn_version=sklearn.__version__), handle)
             if name == 'mlp':
                 result['train_loss_by_epoch'] = model[-1].loss_curve_
