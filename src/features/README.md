@@ -27,3 +27,5 @@ After reference alignment, run `python src/features/audit.py` to reproduce the p
 
 Aligned candidate recall uses observations within 100 m of their assigned reference arc. The assignment is estimated by monotonic route alignment, and observations beyond that distance are reported as excluded. The model metrics use this same alignment rule.
 
+Use `python src/features/audit.py --full-max-observations 500` to check every observation in trips with up to 500 points. Larger trips retain seeded sampling and exhaustive checks of all fallbacks. The per-trip output records which trips were checked in full.
+
