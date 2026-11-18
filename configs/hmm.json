@@ -1,0 +1,15 @@
+{
+  "emission_weight": 1.0,
+  "beta_m": 10.0,
+  "jump_penalty": 16.0,
+  "uturn_penalty": 4.0,
+  "gap_beta_exponent": 0.5,
+  "gap_reset_s": 30.0,
+  "prune_prob": 0.01,
+  "max_states": 6,
+  "min_states": 2,
+  "backward_tol_m": 8.0,
+  "search_factor": 2.0,
+  "search_margin_m": 150.0,
+  "max_search_m": 3000.0
+}
